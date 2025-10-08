@@ -24,3 +24,6 @@ yarn-error.log*
 
 # virtual environment
 /envP13
+
+# pycache
+/__pycache__
