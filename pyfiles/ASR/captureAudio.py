@@ -1,6 +1,5 @@
 import eel
 import speech_recognition as sr
-import pyttsx3
 from fuzzywuzzy import fuzz
 import jellyfish
 import time
@@ -9,6 +8,7 @@ import threading
 import pyaudio
 import queue
 from collections import deque
+import pyttsx3
 
 audio_processor = None
 
@@ -61,7 +61,19 @@ class RealTimeAudioProcessor:
     """
     Manages a real-time audio stream for simultaneous visualization and speech recognition.
     """
-    def __init__(self, model_size="base.en"):
+    def __init__(self, model_size="base.en", llm_chat=None):
+        self.llm_chat = llm_chat
+
+        try:
+            self.tts_engine = pyttsx3.init()
+            self.configure_engine()
+            self.tts_engine.stop()
+            self.tts_engine.say("System initialized and ready.")
+            self.tts_engine.runAndWait()
+        except Exception as e:
+            print(f"Failed to initialize TTS engine: {e}")
+            self.tts_engine = None
+            
         # Audio stream parameters
         self.CHUNK = 1024
         self.FORMAT = pyaudio.paInt16
@@ -71,10 +83,10 @@ class RealTimeAudioProcessor:
         self.SILENCE_DURATION_S = 0.5
         self.SILENCE_CHUNKS = int(self.SILENCE_DURATION_S * self.RATE / self.CHUNK)
         self.is_speaking = False
+        self.tts_is_speaking = False
 
         # Speech recognition and TTS
         self.recognizer = sr.Recognizer()
-        self.engine = pyttsx3.init()
         self.model = model_size
 
         # State management
@@ -85,6 +97,9 @@ class RealTimeAudioProcessor:
         self.phrase_buffer = deque()
         self.silence_counter = 0
         self.guard_mode = False
+
+
+
 
         # Target phrases for matching
         self.target_phrases_on = [
@@ -156,6 +171,20 @@ class RealTimeAudioProcessor:
                 print(f"New SILENCE_THRESHOLD set to: {self.SILENCE_THRESHOLD}")
                 break 
 
+    def configure_engine(self):
+        """Configures the TTS engine for a more human-like voice."""
+        if not self.tts_engine:
+            return
+        
+        # Adjust the speaking rate (slower is often more natural)
+        rate = self.tts_engine.getProperty('rate')
+        self.tts_engine.setProperty('rate', 150)
+
+        # Change the voice (index 1 is often a female voice on Windows)
+        voices = self.tts_engine.getProperty('voices')
+        if len(voices) > 1:
+            self.tts_engine.setProperty('voice', voices[1].id)
+
     def _audio_callback(self, in_data, frame_count, time_info, status):
         """This function is called by PyAudio for each new audio chunk."""
         bands_to_analyze = [
@@ -185,6 +214,10 @@ class RealTimeAudioProcessor:
         ]
         
         eel.update_frequency_bars(final_bars)
+
+        if self.tts_is_speaking:
+            return (in_data, pyaudio.paContinue)
+
 
         volume = np.frombuffer(in_data, dtype=np.int16).max()
         is_currently_loud = volume > self.SILENCE_THRESHOLD
@@ -269,17 +302,47 @@ class RealTimeAudioProcessor:
                     self.guard_mode = True 
                     eel.trigger_action("Guard Mode Activated!", "green")
                     eel.update_guard_mode(self.guard_mode)
+                    try:
+                        self.tts_is_speaking = True
+                        time.sleep(0.1)
+                        self.tts_engine.stop()
+                        self.tts_engine.say("Guard mode activated.")
+                        self.tts_engine.runAndWait()
+                    finally:
+                        self.tts_is_speaking = False
+                    continue
 
                 elif off_score > on_score and off_score >= MATCH_THRESHOLD and self.guard_mode == True:
                     print("\nACTION: Turning OFF Guard Mode!\n")
                     self.guard_mode = False
                     eel.trigger_action("Guard Mode Deactivated!", "red")
                     eel.update_guard_mode(self.guard_mode)
+                    try:
+                        self.tts_is_speaking = True
+                        time.sleep(0.1)
+                        self.tts_engine.stop()
+                        self.tts_engine.say("Guard mode deactivated.")
+                        self.tts_engine.runAndWait()
+                    finally:
+                        self.tts_is_speaking = False
+                    continue
 
                 else:
                     print("-> No action taken (score below threshold or ambiguous).")
-                
+
                 eel.update_data(text)
+                if (len(text) > 10):
+                    output = self.llm_chat(text)
+                    print(f"Gemma: {output}")
+                    try:
+                        eel.update_data(f"Guard: {output}")
+                        self.tts_is_speaking = True
+                        time.sleep(0.1)
+                        self.tts_engine.stop()
+                        self.tts_engine.say(output)
+                        self.tts_engine.runAndWait()
+                    finally:
+                        self.tts_is_speaking = False
 
             except queue.Empty:
                 continue
@@ -331,15 +394,3 @@ class RealTimeAudioProcessor:
         self.p.terminate()
         self.recognition_thread.join()
         print("Processor stopped.")
-
-
-@eel.expose
-def start_listening():
-    """Called from JavaScript to start the whole process."""
-    global audio_processor
-    if audio_processor is None or not audio_processor.is_running:
-        print('start_listening called from JS')
-        audio_processor = RealTimeAudioProcessor(model_size="base.en")
-        audio_processor.start()
-    else:
-        print("Audio processor is already running.")

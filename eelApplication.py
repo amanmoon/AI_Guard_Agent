@@ -1,5 +1,5 @@
 import eel
-from pyfiles.ASR.captureAudio import *
+from pyfiles.eelBridge import *
 
 eel.init('build')
 print("Starting UI... Close the window to exit the application.")
