@@ -1,6 +1,5 @@
 import face_recognition
 import cv2
-import numpy as np
 import os
 import time
 import threading
@@ -79,7 +78,7 @@ class FacialRecognizer:
         Returns:
             str: The overall status ('Trusted', 'Untrusted', 'No Face Detected').
         """
-        small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+        small_frame = cv2.resize(frame, (0, 0), fx=1, fy=1)
         rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
 
         face_locations = face_recognition.face_locations(rgb_small_frame, model=self.model)
@@ -122,7 +121,7 @@ class FacialRecognizer:
                 print(f"State changed to: {'Verified' if self.is_verified else 'Unverified'}")
                 last_verified_state = self.is_verified
             
-            time.sleep(10)
+            time.sleep(1)
         
         video_capture.release()
         print("Recognition loop stopped and camera released.")
@@ -158,26 +157,3 @@ class FacialRecognizer:
         self._running = False
         self._recognition_thread.join() 
         print("Recognition thread stopped.")
-
-
-if __name__ == "__main__":
-    """Main function to demonstrate the threaded facial recognition."""
-    TRUSTED_FACES_DIR = "trusted_faces"
-    MODEL_TO_USE = "cnn"
-
-    recognizer = FacialRecognizer(trusted_faces_dir=TRUSTED_FACES_DIR, model=MODEL_TO_USE)
-    recognizer.start_recognition()
-    
-    print("\nMain thread is running independently. Press Ctrl+C to stop.")
-    
-    try:
-        while True:
-            time.sleep(5)
-            print(f"(Main Thread Check) Current verification status: {recognizer.is_verified}")
-            
-    except KeyboardInterrupt:
-        print("\nCtrl+C detected in main thread. Shutting down.")
-    
-    finally:
-        recognizer.stop_recognition()
-        print("Main program finished.")
