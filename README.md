@@ -3,9 +3,10 @@
 **Course:** EE 726 - Advanced Machine Learning (IIT Bombay)  
 **Instructor:** Prof. Amit Sethi  
 **Authors:** V Sathvik, Aman Moon  
-**Status:** Active
+**Status:** Completed \
+**[Demo Video Link](https://drive.google.com/file/d/19kbUmnauzn8cr-vKW8ckhwxL8zqijvJi/view?usp=sharing)** 
 
-## 📋 Abstract
+## Abstract
 
 The **AI Guard Agent** is an interactive security monitor developed as part of the **Advanced Machine Learning** curriculum. It integrates **Automatic Speech Recognition (ASR)**, **Facial Recognition**, and **Large Language Models (LLMs)** to create a system that secures environments by actively monitoring audio-visual inputs and verifying user identities.
 
@@ -13,7 +14,7 @@ It operates via a robust **multi-threaded Python backend**, ensuring real-time p
 
 ---
 
-## 🛠️ Tech Stack & Libraries
+## Tech Stack & Libraries
 
 The following libraries were utilized to build the various modules of the system:
 
@@ -32,7 +33,7 @@ The following libraries were utilized to build the various modules of the system
 
 ---
 
-## 🏗️ System Architecture & Multi-Threading
+## System Architecture & Multi-Threading
 
 The core strength of the AI Guard Agent lies in its **concurrent execution architecture**. To ensure low latency and prevent the main application loop from freezing during heavy inference or I/O tasks, the system implements a **multi-threaded architecture** consisting of three primary worker threads:
 
@@ -62,7 +63,7 @@ The core strength of the AI Guard Agent lies in its **concurrent execution archi
 
 ---
 
-## 🎤 Audio Subsystem Implementation
+## Audio Subsystem Implementation
 
 The audio logic prioritizes responsiveness and visualization.
 
@@ -74,7 +75,7 @@ The audio logic prioritizes responsiveness and visualization.
 
 ---
 
-## 👁️ Computer Vision Module
+## Computer Vision Module
 
 The vision module ensures that only authorized personnel can access the system's "Helpful" persona.
 
@@ -86,7 +87,7 @@ The vision module ensures that only authorized personnel can access the system's
 
 ---
 
-## 🧠 Generative AI Integration
+## Generative AI Integration
 
 The conversational core utilizes **Google's Gemma model** (`google/gemma-3n-E4b-it`), optimized for consumer hardware using `torch.bfloat16` precision.
 
@@ -98,7 +99,7 @@ The agent's behavior is dictated by dynamic prompt injection:
 
 ---
 
-## 🚀 Installation & Usage
+## Installation & Usage
 
 ### Prerequisites
 * **Python 3.8+**
@@ -139,7 +140,7 @@ The agent's behavior is dictated by dynamic prompt injection:
 
 ---
 
-## 🔄 Integration Flow
+## Integration Flow
 
 1.  **Idle Mode:** System listens for the specific "Activate" keyword.
 2.  **Active Mode:** * **Vision Thread** continuously checks for faces.
